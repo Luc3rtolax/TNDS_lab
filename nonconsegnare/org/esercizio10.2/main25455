@@ -1,0 +1,130 @@
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TH1F.h"
+#include "TGraph.h"
+#include "TPad.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "Funzionebase.h"
+#include "IntegraleMC.h"
+
+#define MAX (M_PI / 2.0)
+#define MIN 0.0
+
+using namespace std;
+
+int main(int argc, char** argv)
+{
+    if (argc != 2) {
+        cerr << "Usage: " << argv[0] << " <seed>" << endl;
+        return -1;
+    }
+
+    int seed = atoi(argv[1]);
+
+    TApplication app("app", &argc, argv);
+
+    // Valori richiesti dalla consegna
+    vector<int> valoriN{100, 500, 1000, 5000, 10000};
+
+    const int numeroStime = 10000;
+
+    xsinx f;
+    IntegratoreMedia integer(seed);
+
+    vector<TH1F*> istogrammi;
+    vector<double> errori;
+
+    TCanvas canvasIstogrammi("canvasIstogrammi","Distribuzioni delle stime",1200,800);
+
+    canvasIstogrammi.Divide(2, 3);
+
+    for (size_t j = 0; j < valoriN.size(); j++) {
+
+        int punti = valoriN[j];
+
+        vector<double> stime;
+        stime.reserve(numeroStime);
+
+        // Ripeto 10 000 volte l'integrazione
+        for (int i = 0; i < numeroStime; i++) {
+
+            double integrale =
+                integer.Integra(f, MIN, MAX, punti, 0.0);
+
+            stime.push_back(integrale);
+        }
+
+        string nome = "h_" + to_string(punti);
+
+        string titolo =
+            "Distribuzione per N = " + to_string(punti) +
+            ";Valore dell'integrale;Conteggi";
+
+        TH1F* istogramma = new TH1F(nome.c_str(),titolo.c_str(),100,0.7,1.3);
+
+        for (double stima : stime)
+            istogramma->Fill(stima);
+
+        istogrammi.push_back(istogramma);
+
+        // Errore richiesto: deviazione standard delle 10 000 stime
+        double errore = istogramma->GetStdDev();
+        errori.push_back(errore);
+
+        cout << "N = " << punti
+             << "\tmedia = " << istogramma->GetMean()
+             << "\tdeviazione standard = " << errore
+             << endl;
+
+        canvasIstogrammi.cd(j + 1);
+        istogramma->Draw();
+    }
+
+    canvasIstogrammi.Update();
+    canvasIstogrammi.SaveAs("distribuzioniMedia.pdf");
+
+    // Grafico errore in funzione di N
+    TCanvas canvasErrori("canvasErrori","Errore in funzione di N",800,600);
+
+    TGraph graficoErrori;
+
+    for (size_t j = 0; j < valoriN.size(); j++) {
+        graficoErrori.SetPoint(j, valoriN[j], errori[j]);
+    }
+
+    graficoErrori.SetTitle(
+        "Errore Monte Carlo in funzione di N;"
+        "Numero di punti N;"
+        "Deviazione standard"
+    );
+
+    graficoErrori.SetMarkerStyle(20);
+    graficoErrori.SetMarkerSize(1.2);
+    graficoErrori.SetLineWidth(2);
+
+    graficoErrori.Draw("APL");
+
+    // Utile perché l'errore dovrebbe comportarsi come 1/sqrt(N)
+    canvasErrori.SetLogx();
+    canvasErrori.SetLogy();
+    canvasErrori.SetGrid();
+
+    canvasErrori.Update();
+    canvasErrori.SaveAs("errore_vs_N_Media.pdf");
+
+
+    for (TH1F* istogramma : istogrammi)
+        delete istogramma;
+
+
+/////////////////////////////////////////////////////
+
+    return 0;
+}
