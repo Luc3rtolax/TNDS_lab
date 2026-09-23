@@ -67,3 +67,46 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# ===== C++ / compilazione =====
+*.o
+*.obj
+*.so
+*.a
+*.exe
+*.out
+*.d
+build/
+bin/
+obj/
+
+# ===== ROOT (CERN) =====
+*.root
+*Dict.cxx
+*Dict.h
+*.pcm
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# ===== Dati pesanti (opzionale, decommenta se servono) =====
+# *.dcm
+# *.nii
+# *.csv
+# data/
+
+# ===== Editor / IDE =====
+.vscode/
+.idea/
+*.swp
+
+# ===== Sistema =====
+.DS_Store
+Thumbs.db
